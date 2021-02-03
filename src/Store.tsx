@@ -48,17 +48,20 @@ import { PersistGate } from "redux-persist/lib/integration/react";
 import storage from "redux-persist/lib/storage";
 
 // Reducer Imports
+import { popupReducer, PopupState } from "./Redux/popup.slice";
 
 export interface StoreSchema {}
 
 export interface Profile {}
 
 interface State {
+  popup: PopupState;
   firebase: FirebaseReducer.Reducer<Profile, StoreSchema>;
   firestore: FirestoreReducer.Reducer;
 }
 
 const reducers = combineReducers<State>({
+  popup: popupReducer,
   firebase: firebaseReducer,
   //@ts-expect-error firestoreReducer does not have correct typings
   firestore: firestoreReducer,
