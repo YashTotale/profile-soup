@@ -116,6 +116,7 @@ const useCustomProfileStyles = makeStyles((theme) => ({
 interface Fields {
   name: string;
   color: string;
+  link: string;
 }
 
 const CustomProfile: FC = () => {
@@ -144,6 +145,23 @@ const CustomProfile: FC = () => {
         })}
         error={!!errors.name}
         helperText={errors.name?.message}
+        fullWidth
+        className={classes.textField}
+      ></TextField>
+      <TextField
+        name="link"
+        label="Link"
+        variant="outlined"
+        size="small"
+        inputRef={register({
+          required: "Link is required",
+          minLength: {
+            message: "Link must be at least 6 characters",
+            value: 6,
+          },
+        })}
+        error={!!errors.link}
+        helperText={errors.link?.message}
         fullWidth
         className={classes.textField}
       ></TextField>
