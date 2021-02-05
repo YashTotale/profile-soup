@@ -1,10 +1,9 @@
 // React Imports
 import React, { FC } from "react";
+import { useSearchParams } from "../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
-import { useAppDispatch } from "../Store";
-import { togglePopup } from "../Redux/popup.slice";
 
 // Firebase Imports
 import { getUser } from "../Redux/firebase";
@@ -19,9 +18,16 @@ import {
   Tooltip,
   Avatar,
 } from "@material-ui/core";
-import { Person } from "@material-ui/icons";
+import { AddCircleOutlineSharp, Person } from "@material-ui/icons";
 
 const useStyles = makeStyles((theme) => ({
+  toolbar: {
+    justifyContent: "flex-end",
+  },
+  addProfile: {
+    margin: theme.spacing(0, 2),
+    fontSize: "1.7rem",
+  },
   avatar: {
     cursor: "pointer",
   },
@@ -31,8 +37,9 @@ interface NavBarProps {}
 
 const NavBar: FC<NavBarProps> = () => {
   const classes = useStyles();
-  const dispatch = useAppDispatch();
   const user = useSelector(getUser);
+
+  const params = useSearchParams();
 
   return (
     <AppBar
@@ -41,16 +48,20 @@ const NavBar: FC<NavBarProps> = () => {
       position="static"
       variant="elevation"
     >
-      <Toolbar>
+      <Toolbar className={classes.toolbar}>
+        <Tooltip title="Add Profile">
+          <IconButton
+            onClick={() => params.set("popup", "addProfile")}
+            className={classes.addProfile}
+          >
+            <AddCircleOutlineSharp fontSize="inherit" />
+          </IconButton>
+        </Tooltip>
         {!user.isLoaded ? (
           <CircularProgress />
         ) : user.isEmpty ? (
           <Tooltip title="Login">
-            <IconButton
-              onClick={() =>
-                dispatch(togglePopup({ open: true, type: "login" }))
-              }
-            >
+            <IconButton onClick={() => params.set("popup", "login")}>
               <Person />
             </IconButton>
           </Tooltip>

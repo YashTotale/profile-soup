@@ -1,73 +1,101 @@
 // React Imports
 import React, { FC } from "react";
-import { useClosableSnackbar } from "../Hooks";
+import { Link as RouterLink } from "react-router-dom";
+import { ProviderContext } from "notistack";
+import { useClosableSnackbar, useSearchParams } from "../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
-import { AppDispatch, useAppDispatch } from "../Store";
-import { getPopupOpen, getPopupType, togglePopup } from "../Redux/popup.slice";
 
 // Firebase Imports
 import firebase from "firebase/app";
-import { ExtendedFirebaseInstance, useFirebase } from "react-redux-firebase";
+import {
+  ExtendedFirebaseInstance,
+  FirebaseReducer,
+  useFirebase,
+  useFirestoreConnect,
+} from "react-redux-firebase";
 import { StyledFirebaseAuth } from "react-firebaseui";
-import { getUser } from "../Redux/firebase";
+import { getProfileTypesArr, getUser } from "../Redux/firebase";
 
 // Material UI Imports
 import {
+  CircularProgress,
   Dialog,
   DialogActions,
+  DialogContent,
   DialogTitle,
   makeStyles,
+  Tab,
+  Tabs,
 } from "@material-ui/core";
 import {} from "@material-ui/icons";
-import { ProviderContext } from "notistack";
 
 const useStyles = makeStyles((theme) => ({
-  // Styles
+  addProfileContent: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 }));
 
 const Popup: FC = () => {
   const classes = useStyles();
-  const dispatch = useAppDispatch();
   const firebaseInstance = useFirebase();
   const user = useSelector(getUser);
+
+  const params = useSearchParams();
+  const type = params.get("popup");
+
   const snackbar = useClosableSnackbar();
 
-  const open = useSelector(getPopupOpen);
-  const type = useSelector(getPopupType);
+  const props: PopupProps = {
+    firebaseInstance,
+    snackbar,
+    params,
+  };
 
+  const popup = createPopup(type, props, user);
+
+  return (
+    <Dialog open={popup !== null} onClose={() => params.delete("popup")}>
+      {popup}
+    </Dialog>
+  );
+};
+
+const createPopup = (
+  type: string | null,
+  props: PopupProps,
+  user: FirebaseReducer.AuthState
+) => {
   switch (type) {
     case "login": {
-      if (!user.isEmpty && open) dispatch(togglePopup(false));
+      if (user.isLoaded && !user.isEmpty) props.params.delete("popup");
 
-      return (
-        <LoginPopup
-          open={open}
-          dispatch={dispatch}
-          firebaseInstance={firebaseInstance}
-          snackbar={snackbar}
-        />
-      );
+      return <LoginPopup {...props} />;
+    }
+    case "addProfile": {
+      if (user.isLoaded && user.isEmpty) props.params.delete("popup");
+
+      return <AddProfilePopup {...props} />;
+    }
+    default: {
+      return null;
     }
   }
 };
 
 interface PopupProps {
-  open: boolean;
-  dispatch: AppDispatch;
   firebaseInstance: ExtendedFirebaseInstance;
   snackbar: ProviderContext;
+  params: ReturnType<typeof useSearchParams>;
 }
 
-const LoginPopup: FC<PopupProps> = ({
-  open,
-  dispatch,
-  firebaseInstance,
-  snackbar,
-}) => {
+const LoginPopup: FC<PopupProps> = ({ firebaseInstance, snackbar, params }) => {
   return (
-    <Dialog open={open} onClose={() => dispatch(togglePopup(false))}>
+    <>
       <DialogTitle>
         Sign in with Google to start creating your Profile Soup!
       </DialogTitle>
@@ -102,7 +130,39 @@ const LoginPopup: FC<PopupProps> = ({
           }}
         />
       </DialogActions>
-    </Dialog>
+    </>
+  );
+};
+
+const AddProfilePopup: FC<PopupProps> = ({ params }) => {
+  useFirestoreConnect({ collection: "profileTypes" });
+
+  const classes = useStyles();
+  const profileTypes = useSelector(getProfileTypesArr);
+
+  const profileTab = params.get("profileTab");
+
+  return (
+    <>
+      <DialogTitle>Add a New Profile</DialogTitle>
+      <DialogContent className={classes.addProfileContent}>
+        {profileTypes === undefined ? (
+          <CircularProgress />
+        ) : (
+          <Tabs
+            value={profileTab ?? (profileTypes.length ? "default" : "custom")}
+            onChange={(e, val) => params.set("profileTab", val)}
+          >
+            <Tab
+              label="Default"
+              value="default"
+              disabled={!profileTypes.length}
+            ></Tab>
+            <Tab label="Custom" value="custom"></Tab>
+          </Tabs>
+        )}
+      </DialogContent>
+    </>
   );
 };
 

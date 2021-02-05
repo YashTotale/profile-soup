@@ -50,7 +50,15 @@ import storage from "redux-persist/lib/storage";
 // Reducer Imports
 import { popupReducer, PopupState } from "./Redux/popup.slice";
 
-export interface StoreSchema {}
+export type AddId<T extends object> = T & { id: string };
+
+export interface ProfileType {
+  name: string;
+}
+
+export interface StoreSchema {
+  profileTypes: ProfileType;
+}
 
 export interface Profile {}
 

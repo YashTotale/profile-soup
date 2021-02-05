@@ -23,6 +23,12 @@ const Theme: FC = ({ children }) => {
           backgroundColor: "rgb(0, 0, 0, 0.76)",
         },
       },
+      MuiTab: {
+        wrapper: {
+          fontFamily: alternativeFont,
+          fontWeight: 600,
+        },
+      },
       MuiButton: {
         label: {
           fontFamily: alternativeFont,
