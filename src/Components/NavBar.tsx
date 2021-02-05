@@ -47,14 +47,16 @@ const NavBar: FC = () => {
       variant="elevation"
     >
       <Toolbar className={classes.toolbar}>
-        <Tooltip title="Add Profile">
-          <IconButton
-            onClick={() => params.set("popup", "addProfile")}
-            className={classes.addProfile}
-          >
-            <AddCircleOutlineSharp fontSize="inherit" />
-          </IconButton>
-        </Tooltip>
+        {!user.isEmpty && (
+          <Tooltip title="Add Profile">
+            <IconButton
+              onClick={() => params.set("popup", "addProfile")}
+              className={classes.addProfile}
+            >
+              <AddCircleOutlineSharp fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        )}
         {!user.isLoaded ? (
           <CircularProgress />
         ) : user.isEmpty ? (

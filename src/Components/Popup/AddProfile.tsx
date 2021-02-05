@@ -7,7 +7,7 @@ import { PopupProps } from "./index";
 import { useSelector } from "react-redux";
 
 // Firebase Imports
-import { useFirestore, useFirestoreConnect } from "react-redux-firebase";
+import { useFirestore } from "react-redux-firebase";
 import { getProfileTypesArr } from "../../Redux/firebase";
 
 // Material UI Imports
@@ -20,6 +20,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Typography,
 } from "@material-ui/core";
 import {} from "@material-ui/icons";
 
@@ -32,6 +33,7 @@ const useStyles = makeStyles(() => ({
   },
   title: {
     paddingBottom: 0,
+    textAlign: "center",
   },
 }));
 
@@ -40,8 +42,6 @@ type ProfileTab = "custom" | "default";
 const PROFILE_TABS: ProfileTab[] = ["default", "custom"];
 
 const AddProfilePopup: FC<PopupProps> = ({ params }) => {
-  useFirestoreConnect({ collection: "profileTypes" });
-
   const classes = useStyles();
   const profileTypes = useSelector(getProfileTypesArr);
 
@@ -101,12 +101,27 @@ const useCustomProfileStyles = makeStyles((theme) => ({
   textField: {
     margin: theme.spacing(1, 0),
   },
+  colorDiv: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+    margin: theme.spacing(1, 0),
+  },
+  colorInput: {
+    margin: theme.spacing(0, 0, 0, 1),
+  },
 }));
 
+interface Fields {
+  name: string;
+  color: string;
+}
+
 const CustomProfile: FC = () => {
-  const classes = useCustomProfileStyles();
   const firestore = useFirestore();
-  const { register, handleSubmit, errors } = useForm();
+  const { register, handleSubmit, errors } = useForm<Fields>();
+  const classes = useCustomProfileStyles();
 
   return (
     <form
@@ -132,6 +147,16 @@ const CustomProfile: FC = () => {
         fullWidth
         className={classes.textField}
       ></TextField>
+      <div className={classes.colorDiv}>
+        <Typography variant="body1">Color:</Typography>
+        <input
+          name="color"
+          type="color"
+          className={classes.colorInput}
+          defaultValue="#5DADE2"
+          ref={register({ required: "Color is required" })}
+        ></input>
+      </div>
       <Button variant="contained" color="primary" type="submit">
         Create New Profile
       </Button>
