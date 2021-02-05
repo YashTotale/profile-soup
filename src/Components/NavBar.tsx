@@ -33,9 +33,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-interface NavBarProps {}
-
-const NavBar: FC<NavBarProps> = () => {
+const NavBar: FC = () => {
   const classes = useStyles();
   const user = useSelector(getUser);
 

@@ -2,7 +2,13 @@ import { useHistory, useLocation } from "react-router-dom";
 
 export type KnownParams = "popup" | "profileTab";
 
-const useSearchParams = () => {
+interface Params extends URLSearchParams {
+  set(name: KnownParams, value: string): void;
+  delete(name: KnownParams): void;
+  get(name: KnownParams): string | null;
+}
+
+const useSearchParams = (): Params => {
   const { search } = useLocation();
   const history = useHistory();
 

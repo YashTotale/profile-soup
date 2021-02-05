@@ -1,9 +1,14 @@
 import React, { ReactNode } from "react";
-import { useSnackbar, OptionsObject, SnackbarKey } from "notistack";
+import {
+  useSnackbar,
+  OptionsObject,
+  SnackbarKey,
+  ProviderContext,
+} from "notistack";
 import { IconButton } from "@material-ui/core";
 import { Clear } from "@material-ui/icons";
 
-const useClosableSnackbar = () => {
+const useClosableSnackbar = (): ProviderContext => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   const closeButton = (key: SnackbarKey) => (

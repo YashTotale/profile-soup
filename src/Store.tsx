@@ -48,9 +48,8 @@ import { PersistGate } from "redux-persist/lib/integration/react";
 import storage from "redux-persist/lib/storage";
 
 // Reducer Imports
-import { popupReducer, PopupState } from "./Redux/popup.slice";
 
-export type AddId<T extends object> = T & { id: string };
+export type AddId<T extends Record<string, any>> = T & { id: string };
 
 export interface ProfileType {
   name: string;
@@ -60,16 +59,15 @@ export interface StoreSchema {
   profileTypes: ProfileType;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface Profile {}
 
 interface State {
-  popup: PopupState;
   firebase: FirebaseReducer.Reducer<Profile, StoreSchema>;
   firestore: FirestoreReducer.Reducer;
 }
 
 const reducers = combineReducers<State>({
-  popup: popupReducer,
   firebase: firebaseReducer,
   //@ts-expect-error firestoreReducer does not have correct typings
   firestore: firestoreReducer,
@@ -118,7 +116,7 @@ const store = configureStore({
 export type RootState = ReturnType<typeof store.getState>;
 
 export type AppDispatch = typeof store.dispatch;
-export const useAppDispatch = () => useDispatch<AppDispatch>();
+export const useAppDispatch = (): AppDispatch => useDispatch<AppDispatch>();
 
 export type AppThunk = ThunkAction<
   void,

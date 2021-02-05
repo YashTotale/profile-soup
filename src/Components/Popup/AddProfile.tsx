@@ -23,7 +23,7 @@ import {
 } from "@material-ui/core";
 import {} from "@material-ui/icons";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   content: {
     display: "flex",
     flexDirection: "column",

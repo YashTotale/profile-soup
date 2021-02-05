@@ -12,7 +12,7 @@ import { StyledFirebaseAuth } from "react-firebaseui";
 import { DialogActions, DialogTitle } from "@material-ui/core";
 import {} from "@material-ui/icons";
 
-const LoginPopup: FC<PopupProps> = ({ firebaseInstance, snackbar, params }) => {
+const LoginPopup: FC<PopupProps> = ({ firebaseInstance, snackbar }) => {
   return (
     <>
       <DialogTitle>
