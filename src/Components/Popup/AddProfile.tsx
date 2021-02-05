@@ -74,12 +74,19 @@ const AddProfilePopup: FC<PopupProps> = ({ params }) => {
       >
         <Tab
           label="Default"
-          value="default"
+          value={"default" as ProfileTab}
           disabled={!profileTypes.length}
         ></Tab>
-        <Tab label="Custom" value="custom"></Tab>
+        <Tab label="Custom" value={"custom" as ProfileTab}></Tab>
       </Tabs>
       {profileTab === "custom" && <CustomProfile />}
+      {profileTab === "default" && (
+        <div>
+          {profileTypes.map(({ name, id }) => (
+            <h3 key={id}>{name}</h3>
+          ))}
+        </div>
+      )}
     </>
   );
 };
@@ -100,8 +107,6 @@ const CustomProfile: FC = () => {
   const classes = useCustomProfileStyles();
   const firestore = useFirestore();
   const { register, handleSubmit, errors } = useForm();
-
-  console.log(errors);
 
   return (
     <form
