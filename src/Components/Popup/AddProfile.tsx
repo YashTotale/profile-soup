@@ -2,6 +2,7 @@
 import React, { FC } from "react";
 import { useForm } from "react-hook-form";
 import { PopupProps } from "./index";
+import Badge, { BadgeData } from "../Badge";
 
 // Redux Imports
 import { useSelector } from "react-redux";
@@ -111,17 +112,14 @@ const useCustomProfileStyles = makeStyles((theme) => ({
   colorInput: {
     margin: theme.spacing(0, 0, 0, 1),
   },
+  badge: {
+    margin: theme.spacing(1, 0),
+  },
 }));
-
-interface Fields {
-  name: string;
-  color: string;
-  link: string;
-}
 
 const CustomProfile: FC = () => {
   const firestore = useFirestore();
-  const { register, handleSubmit, errors } = useForm<Fields>();
+  const { register, handleSubmit, errors, watch } = useForm<BadgeData>();
   const classes = useCustomProfileStyles();
 
   return (
@@ -175,6 +173,12 @@ const CustomProfile: FC = () => {
           ref={register({ required: "Color is required" })}
         ></input>
       </div>
+      <Badge
+        name={watch("name")}
+        color={watch("color")}
+        link={watch("link")}
+        className={classes.badge}
+      />
       <Button variant="contained" color="primary" type="submit">
         Create New Profile
       </Button>
