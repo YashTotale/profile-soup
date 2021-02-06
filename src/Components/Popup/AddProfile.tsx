@@ -1,6 +1,14 @@
 // React Imports
-import React, { FC } from "react";
-import { useForm } from "react-hook-form";
+import React, { FC, useMemo } from "react";
+import { Controller, useForm } from "react-hook-form";
+import Select, {
+  components,
+  MenuListComponentProps,
+  OptionProps,
+} from "react-select";
+import { FixedSizeList } from "react-window";
+import SVG from "react-inlinesvg";
+import icons from "simple-icons";
 import { PopupProps } from "./index";
 import Badge, { BadgeData } from "../Badge";
 
@@ -31,6 +39,7 @@ const useStyles = makeStyles(() => ({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "visible",
   },
   title: {
     paddingBottom: 0,
@@ -112,6 +121,23 @@ const useCustomProfileStyles = makeStyles((theme) => ({
   colorInput: {
     margin: theme.spacing(0, 0, 0, 1),
   },
+  iconSelect: {
+    width: "100%",
+  },
+  optionDiv: {
+    display: "flex",
+    alignItems: "center",
+  },
+  optionIcon: {
+    width: "1.5rem",
+    height: "1.5rem",
+    margin: theme.spacing(0, 1, 0, 0),
+  },
+  optionIconLoading: {
+    width: "0.5rem",
+    height: "0.5rem",
+    margin: theme.spacing(0, 1, 0, 0),
+  },
   badge: {
     margin: theme.spacing(1, 0),
   },
@@ -119,8 +145,26 @@ const useCustomProfileStyles = makeStyles((theme) => ({
 
 const CustomProfile: FC = () => {
   const firestore = useFirestore();
-  const { register, handleSubmit, errors, watch } = useForm<BadgeData>();
+  const { register, handleSubmit, errors, control, watch } = useForm<BadgeData>(
+    {
+      defaultValues: {
+        icon: null,
+      },
+    }
+  );
   const classes = useCustomProfileStyles();
+  const options = useMemo(
+    () =>
+      Object.keys(icons).map((icon) => {
+        const iconObj = icons.get(icon);
+        return {
+          value: iconObj.title.toLowerCase().replace(" ", "-"),
+          label: iconObj.title,
+          svg: iconObj.svg,
+        };
+      }),
+    []
+  );
 
   return (
     <form
@@ -163,6 +207,22 @@ const CustomProfile: FC = () => {
         fullWidth
         className={classes.textField}
       ></TextField>
+      <Controller
+        name="icon"
+        render={({ onChange, onBlur, value }) => (
+          <Select
+            onBlur={onBlur}
+            onChange={onChange}
+            value={value}
+            placeholder="Icon"
+            options={options}
+            components={{ Option, MenuList }}
+            className={classes.iconSelect}
+            isClearable
+          />
+        )}
+        control={control}
+      />
       <div className={classes.colorDiv}>
         <Typography variant="body1">Color:</Typography>
         <input
@@ -177,12 +237,57 @@ const CustomProfile: FC = () => {
         name={watch("name")}
         color={watch("color")}
         link={watch("link")}
+        icon={watch("icon")}
         className={classes.badge}
       />
       <Button variant="contained" color="primary" type="submit">
         Create New Profile
       </Button>
     </form>
+  );
+};
+
+const MenuList: FC<MenuListComponentProps<any, false, any>> = ({
+  options,
+  children,
+  maxHeight,
+  getValue,
+}) => {
+  const height = 50;
+  const [value] = getValue();
+  const initialOffset = options.indexOf(value) * height;
+
+  return (
+    <FixedSizeList
+      height={maxHeight}
+      itemCount={Array.isArray(children) ? children.length : 1}
+      itemSize={height}
+      initialScrollOffset={initialOffset}
+      width="100%"
+    >
+      {({ index, style }) => (
+        <div style={style}>
+          {Array.isArray(children) ? children[index] : children}
+        </div>
+      )}
+    </FixedSizeList>
+  );
+};
+
+const Option: FC<OptionProps<any, false, any>> = (props) => {
+  const classes = useCustomProfileStyles();
+
+  return (
+    <components.Option {...props}>
+      <div className={classes.optionDiv}>
+        <SVG
+          src={props.data.svg}
+          className={classes.optionIcon}
+          loader={<CircularProgress className={classes.optionIconLoading} />}
+        />
+        {props.label}
+      </div>
+    </components.Option>
   );
 };
 

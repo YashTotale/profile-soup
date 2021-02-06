@@ -17,7 +17,7 @@ import {
 import { getUser } from "../../Redux/firebase";
 
 // Material UI Imports
-import { Dialog } from "@material-ui/core";
+import { Dialog, makeStyles } from "@material-ui/core";
 import {} from "@material-ui/icons";
 
 export interface PopupProps {
@@ -26,7 +26,14 @@ export interface PopupProps {
   params: ReturnType<typeof useSearchParams>;
 }
 
+const useStyles = makeStyles(() => ({
+  paper: {
+    overflow: "visible",
+  },
+}));
+
 const Popup: FC = () => {
+  const classes = useStyles();
   const firebaseInstance = useFirebase();
   const user = useSelector(getUser);
 
@@ -44,7 +51,11 @@ const Popup: FC = () => {
   const popup = createPopup(type, props, user);
 
   return (
-    <Dialog open={popup !== null} onClose={() => params.delete("popup")}>
+    <Dialog
+      open={popup !== null}
+      onClose={() => params.delete("popup")}
+      PaperProps={{ className: classes.paper }}
+    >
       {popup}
     </Dialog>
   );

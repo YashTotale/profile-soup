@@ -1,5 +1,6 @@
 // React Imports
 import React, { FC } from "react";
+import { BadgeIcon } from "./Components/Badge";
 
 // Redux Imports
 import {
@@ -53,6 +54,7 @@ export type AddId<T extends Record<string, any>> = T & { id: string };
 
 export interface ProfileType {
   name: string;
+  icon: BadgeIcon;
 }
 
 export interface StoreSchema {
