@@ -1,6 +1,7 @@
 // React Imports
 import React, { FC, useMemo } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
+import { Controller, useForm, UseFormMethods } from "react-hook-form";
 import Select, {
   components,
   MenuListComponentProps,
@@ -8,10 +9,10 @@ import Select, {
 } from "react-select";
 import { FixedSizeList } from "react-window";
 import SVG from "react-inlinesvg";
-import icons from "simple-icons";
+import simpleIcons, { SimpleIcon } from "simple-icons";
 import { PopupProps } from "./index";
 import Badge, { BadgeData } from "../Badge";
-import { Params, useClosableSnackbar } from "../../Hooks";
+import { useClosableSnackbar, useSearchParams } from "../../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
@@ -24,6 +25,7 @@ import { getProfile, getProfileTypesArr } from "../../Redux/firebase";
 // Material UI Imports
 import {
   Button,
+  capitalize,
   CircularProgress,
   DialogContent,
   DialogTitle,
@@ -31,9 +33,11 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
+  IconButton,
 } from "@material-ui/core";
-import {} from "@material-ui/icons";
+import { ArrowBack } from "@material-ui/icons";
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -53,8 +57,9 @@ type ProfileTab = "custom" | "default";
 
 const PROFILE_TABS: ProfileTab[] = ["default", "custom"];
 
-const AddProfilePopup: FC<PopupProps> = ({ params }) => {
+const AddProfilePopup: FC<PopupProps> = () => {
   const classes = useStyles();
+  const params = useSearchParams();
   const profileTypes = useSelector(getProfileTypesArr);
 
   const wrapper = (children: JSX.Element) => (
@@ -65,6 +70,8 @@ const AddProfilePopup: FC<PopupProps> = ({ params }) => {
   );
 
   if (profileTypes === undefined) return wrapper(<CircularProgress />);
+
+  const icons = Object.keys(simpleIcons).map(simpleIcons.get);
 
   const profileTab = params.get("profileTab") as ProfileTab;
 
@@ -91,19 +98,123 @@ const AddProfilePopup: FC<PopupProps> = ({ params }) => {
         ></Tab>
         <Tab label="Custom" value={"custom" as ProfileTab}></Tab>
       </Tabs>
-      {profileTab === "custom" && <CustomProfile params={params} />}
+      {profileTab === "custom" && <CustomProfile icons={icons} />}
       {profileTab === "default" && (
-        <div>
-          {profileTypes.map((profile) => (
-            <Badge {...profile} key={profile.id} />
-          ))}
-        </div>
+        <DefaultProfiles profileTypes={profileTypes} />
       )}
     </>
   );
 };
 
+const useDefaultProfilesStyles = makeStyles((theme) => ({
+  heading: {
+    position: "relative",
+    margin: theme.spacing(2, 0, 0.5, 0),
+    width: "85%",
+    textAlign: "center",
+    wordBreak: "break-all",
+  },
+  backArrow: {
+    position: "absolute",
+    top: "50%",
+    left: "-13%",
+    transform: "translate(0%,-50%)",
+    padding: theme.spacing(1),
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  textField: {
+    margin: theme.spacing(1, 0),
+  },
+  defaultProfiles: {
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+}));
+
+interface DefaultProfilesProps {
+  profileTypes: ReturnType<typeof getProfileTypesArr>;
+}
+
+const DefaultProfiles: FC<DefaultProfilesProps> = ({ profileTypes }) => {
+  const params = useSearchParams();
+  const classes = useDefaultProfilesStyles();
+  const { register, errors } = useForm();
+  const createProfile = params.get("createProfile");
+
+  const found = profileTypes.find(({ name }) => name === createProfile);
+
+  if (found) {
+    const vars = found.baseURL.match(/__([^__]*)__/g);
+
+    if (vars === null) return null;
+
+    return (
+      <>
+        <Typography className={classes.heading} variant="h5">
+          <Tooltip title="View all Default Profiles">
+            <IconButton
+              className={classes.backArrow}
+              onClick={() => params.delete("createProfile")}
+            >
+              <ArrowBack fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          Add Your {createProfile} Profile
+        </Typography>
+        <form className={classes.form}>
+          {vars.map((variable, i) => {
+            const formatted = variable.replace(new RegExp("_", "g"), "");
+
+            return (
+              <InputField
+                key={i}
+                name={formatted}
+                errors={errors}
+                register={register}
+                minChars={2}
+              />
+            );
+          })}
+        </form>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Typography variant="h5" className={classes.heading}>
+        Add a Default Profile
+      </Typography>
+      <div className={classes.defaultProfiles}>
+        {profileTypes.map((profile) => (
+          <Link
+            key={profile.id}
+            to={() => {
+              params.set("createProfile", profile.name, false);
+              return {
+                search: params.toString(),
+              };
+            }}
+          >
+            <Badge {...profile} />
+          </Link>
+        ))}
+      </div>
+    </>
+  );
+};
+
 const useCustomProfileStyles = makeStyles((theme) => ({
+  heading: {
+    margin: theme.spacing(2, 0, 0.5, 0),
+  },
   form: {
     display: "flex",
     flexDirection: "column",
@@ -120,11 +231,12 @@ const useCustomProfileStyles = makeStyles((theme) => ({
     position: "relative",
     margin: theme.spacing(1, 0),
   },
-  colorInput: {
-    margin: theme.spacing(0, 0, 0, 1),
-  },
   iconSelect: {
     width: "100%",
+    margin: theme.spacing(1, 0),
+  },
+  colorInput: {
+    margin: theme.spacing(0, 0, 0, 1),
   },
   optionDiv: {
     display: "flex",
@@ -146,15 +258,16 @@ const useCustomProfileStyles = makeStyles((theme) => ({
 }));
 
 interface CustomProfileProps {
-  params: Params;
+  icons: SimpleIcon[];
 }
 
 type FormData = Omit<BadgeData, "icon"> & {
   icon: { label: string; value: string; svg: string } | null;
 };
 
-const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
+const CustomProfile: FC<CustomProfileProps> = ({ icons }) => {
   const firebase = useFirebase();
+  const params = useSearchParams();
   const profile = useSelector(getProfile);
   const snackbar = useClosableSnackbar();
   const {
@@ -172,117 +285,99 @@ const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
   const classes = useCustomProfileStyles();
   const options = useMemo(
     () =>
-      Object.keys(icons).map((icon) => {
-        const iconObj = icons.get(icon);
+      icons.map((icon) => {
         return {
-          value: iconObj.title.toLowerCase().replace(" ", "-"),
-          label: iconObj.title,
-          svg: iconObj.svg,
+          value: icon.title.toLowerCase().replace(" ", "-"),
+          label: icon.title,
+          svg: icon.svg,
         };
       }),
-    []
+    [icons]
   );
 
   return (
-    <form
-      onSubmit={handleSubmit((d) => {
-        const existingProfiles = profile?.profiles?.custom ?? [];
+    <>
+      <Typography variant="h5" className={classes.heading}>
+        Create a Custom Profile
+      </Typography>
+      <form
+        onSubmit={handleSubmit((d) => {
+          const existingProfiles = profile?.profiles?.custom ?? [];
 
-        firebase
-          .updateProfile({
-            profiles: {
-              custom: [
-                ...existingProfiles,
-                { ...d, icon: d.icon === null ? null : d.icon.label },
-              ] as ProfileType[],
-            },
-          })
-          .then(() => {
-            reset();
-            snackbar.enqueueSnackbar(
-              `Successfully created new profile '${d.name}'!`,
-              { variant: "success" }
-            );
-            params.delete("popup");
-            params.delete("profileTab");
-          })
-          .catch((e) => {
-            snackbar.enqueueSnackbar(`An error occurred: ${e}`);
-          });
-      })}
-      className={classes.form}
-    >
-      <TextField
-        name="name"
-        label="Name"
-        variant="outlined"
-        size="small"
-        inputRef={register({
-          required: "Name is required",
-          minLength: {
-            message: "Name must be at least 2 characters",
-            value: 2,
-          },
+          firebase
+            .updateProfile({
+              profiles: {
+                custom: [
+                  ...existingProfiles,
+                  { ...d, icon: d.icon === null ? null : d.icon.label },
+                ] as ProfileType[],
+              },
+            })
+            .then(() => {
+              reset();
+              snackbar.enqueueSnackbar(
+                `Successfully created new profile '${d.name}'!`,
+                { variant: "success" }
+              );
+              params.delete("popup");
+              params.delete("profileTab");
+            })
+            .catch((e) => {
+              snackbar.enqueueSnackbar(`An error occurred: ${e}`);
+            });
         })}
-        error={!!errors.name}
-        helperText={errors.name?.message}
-        fullWidth
-        className={classes.textField}
-      ></TextField>
-      <TextField
-        name="link"
-        label="Link"
-        variant="outlined"
-        size="small"
-        inputRef={register({
-          required: "Link is required",
-          minLength: {
-            message: "Link must be at least 6 characters",
-            value: 6,
-          },
-        })}
-        error={!!errors.link}
-        helperText={errors.link?.message}
-        fullWidth
-        className={classes.textField}
-      ></TextField>
-      <Controller
-        name="icon"
-        render={({ onChange, onBlur, value }) => (
-          <Select
-            onBlur={onBlur}
-            onChange={onChange}
-            value={value}
-            placeholder="Icon"
-            options={options}
-            components={{ Option, MenuList }}
-            className={classes.iconSelect}
-            isClearable
-          />
-        )}
-        control={control}
-      />
-      <div className={classes.colorDiv}>
-        <Typography variant="body1">Color:</Typography>
-        <input
-          name="color"
-          type="color"
-          className={classes.colorInput}
-          defaultValue="#5DADE2"
-          ref={register({ required: "Color is required" })}
-        ></input>
-      </div>
-      <Badge
-        name={watch("name")}
-        color={watch("color")}
-        link={watch("link")}
-        icon={watch("icon")?.label ?? null}
-        className={classes.badge}
-      />
-      <Button variant="contained" color="primary" type="submit">
-        Create New Profile
-      </Button>
-    </form>
+        className={classes.form}
+      >
+        <InputField
+          name="name"
+          register={register}
+          errors={errors}
+          minChars={2}
+        />
+        <InputField
+          name="link"
+          register={register}
+          errors={errors}
+          minChars={6}
+        />
+        <Controller
+          name="icon"
+          render={({ onChange, onBlur, value }) => (
+            <Select
+              onBlur={onBlur}
+              onChange={onChange}
+              value={value}
+              placeholder="Icon"
+              options={options}
+              components={{ Option, MenuList }}
+              className={classes.iconSelect}
+              isClearable
+            />
+          )}
+          control={control}
+        />
+        <div className={classes.colorDiv}>
+          <Typography variant="body1">Color:</Typography>
+          <input
+            name="color"
+            type="color"
+            className={classes.colorInput}
+            defaultValue="#5DADE2"
+            ref={register({ required: "Color is required" })}
+          ></input>
+        </div>
+        <Badge
+          name={watch("name")}
+          color={watch("color")}
+          link={watch("link")}
+          icon={watch("icon")?.label ?? null}
+          className={classes.badge}
+        />
+        <Button variant="contained" color="primary" type="submit">
+          Create New Profile
+        </Button>
+      </form>
+    </>
   );
 };
 
@@ -327,6 +422,50 @@ const Option: FC<OptionProps<any, false, any>> = (props) => {
         {props.label}
       </div>
     </components.Option>
+  );
+};
+
+const useInputFieldStyles = makeStyles((theme) => ({
+  inputField: {
+    margin: theme.spacing(1, 0),
+  },
+}));
+
+interface InputFieldProps {
+  name: string;
+  errors: UseFormMethods["errors"];
+  register: UseFormMethods["register"];
+  minChars?: number;
+  required?: boolean;
+}
+
+const InputField: FC<InputFieldProps> = ({
+  name,
+  errors,
+  register,
+  minChars = 2,
+  required = true,
+}) => {
+  const classes = useInputFieldStyles();
+  const capitalized = capitalize(name);
+  return (
+    <TextField
+      name={name}
+      label={capitalized}
+      variant="outlined"
+      size="small"
+      inputRef={register({
+        required: required ? `${capitalized} is required` : undefined,
+        minLength: {
+          message: `${capitalized} must be at least ${minChars} characters`,
+          value: minChars,
+        },
+      })}
+      error={!!errors[name]}
+      helperText={errors[name]?.message}
+      fullWidth
+      className={classes.inputField}
+    ></TextField>
   );
 };
 

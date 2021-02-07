@@ -10,3 +10,7 @@ export const getProfile = (
 
 export const getProfileTypesArr = (state: RootState): AddId<ProfileType>[] =>
   state.firestore.ordered.profileTypes;
+
+export const getProfileTypesObj = (
+  state: RootState
+): Record<string, ProfileType> => state.firestore.data.profileTypes;

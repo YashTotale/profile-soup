@@ -1,9 +1,9 @@
 import { useHistory, useLocation } from "react-router-dom";
 
-export type KnownParams = "popup" | "profileTab";
+export type KnownParams = "popup" | "profileTab" | "createProfile";
 
 export interface Params extends URLSearchParams {
-  set(name: KnownParams, value: string): void;
+  set(name: KnownParams, value: string, update?: boolean): void;
   delete(name: KnownParams): void;
   get(name: KnownParams): string | null;
 }
@@ -13,9 +13,9 @@ const useSearchParams = (): Params => {
   const history = useHistory();
 
   class Params extends URLSearchParams {
-    set(name: KnownParams, value: string) {
+    set(name: KnownParams, value: string, update = true) {
       super.set(name, value);
-      history.push({ search: super.toString() });
+      if (update) history.push({ search: super.toString() });
     }
     delete(name: KnownParams) {
       super.delete(name);

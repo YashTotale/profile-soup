@@ -8,7 +8,7 @@ import {} from "@material-ui/icons";
 export interface BadgeData {
   name: string;
   color: string;
-  link: string;
+  link?: string;
   icon: string | null;
 }
 
@@ -27,16 +27,12 @@ const Badge: FC<BadgeProps> = ({
 
   const formattedColor = color.substring(1);
 
+  const formattedIcon = icon?.toLowerCase()?.replace(" ", "-");
+
+  const url = `https://img.shields.io/static/v1?label=&message=${name}&color=${formattedColor}&style=for-the-badge&link=${link}&logo=${formattedIcon}`;
+
   const image = (
-    <img
-      src={encodeURI(
-        `https://img.shields.io/static/v1?label=&message=${name}&color=${formattedColor}&style=for-the-badge&logo=${icon
-          ?.toLowerCase()
-          ?.replace(" ", "-")}`
-      )}
-      alt={name}
-      className={className}
-    ></img>
+    <img src={encodeURI(url)} alt={name} className={className}></img>
   );
 
   if (link)

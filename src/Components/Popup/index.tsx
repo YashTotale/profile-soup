@@ -1,7 +1,7 @@
 // React Imports
 import React, { FC } from "react";
 import { ProviderContext } from "notistack";
-import { useClosableSnackbar, useSearchParams } from "../../Hooks";
+import { Params, useClosableSnackbar, useSearchParams } from "../../Hooks";
 import AddProfilePopup from "./AddProfile";
 import LoginPopup from "./Login";
 
@@ -23,12 +23,11 @@ import {} from "@material-ui/icons";
 export interface PopupProps {
   firebaseInstance: ExtendedFirebaseInstance;
   snackbar: ProviderContext;
-  params: ReturnType<typeof useSearchParams>;
 }
 
 const useStyles = makeStyles(() => ({
   paper: {
-    overflow: "visible",
+    overflowY: "visible",
   },
 }));
 
@@ -45,10 +44,9 @@ const Popup: FC = () => {
   const props: PopupProps = {
     firebaseInstance,
     snackbar,
-    params,
   };
 
-  const popup = createPopup(type, props, user);
+  const popup = createPopup(type, props, params, user);
 
   return (
     <Dialog
@@ -64,16 +62,17 @@ const Popup: FC = () => {
 const createPopup = (
   type: string | null,
   props: PopupProps,
+  params: Params,
   user: FirebaseReducer.AuthState
 ) => {
   switch (type) {
     case "login": {
-      if (user.isLoaded && !user.isEmpty) props.params.delete("popup");
+      if (user.isLoaded && !user.isEmpty) params.delete("popup");
 
       return <LoginPopup {...props} />;
     }
     case "addProfile": {
-      if (user.isLoaded && user.isEmpty) props.params.delete("popup");
+      if (user.isLoaded && user.isEmpty) params.delete("popup");
 
       return <AddProfilePopup {...props} />;
     }

@@ -54,7 +54,7 @@ export type AddId<T extends Record<string, any>> = T & { id: string };
 export interface ProfileType {
   name: string;
   color: string;
-  link: string;
+  baseURL: string;
   icon: string;
 }
 
