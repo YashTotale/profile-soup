@@ -229,9 +229,7 @@ const DefaultProfiles: FC<DefaultProfilesProps> = ({
             </Link>
           ))
         ) : (
-          <Typography>
-            You have created all existing default profiles.
-          </Typography>
+          <Typography>You have added all existing default profiles.</Typography>
         )}
       </div>
     </>
