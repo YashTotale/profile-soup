@@ -49,25 +49,26 @@ import storage from "redux-persist/lib/storage";
 
 // Reducer Imports
 
-export type AddId<T extends Record<string, any>> = T & { id: string };
-
-export interface ProfileType {
+export interface DefaultProfileType {
   name: string;
   color: string;
   baseURL: string;
   icon: string;
 }
 
+export interface CreatedProfileType {
+  name: string;
+  color: string;
+  link: string;
+  icon: string;
+}
+
 export interface StoreSchema {
-  profileTypes: ProfileType;
+  profileTypes: DefaultProfileType;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface Profile {
-  profiles: {
-    custom: ProfileType[];
-  };
-}
+export interface Profile {}
 
 interface State {
   firebase: FirebaseReducer.Reducer<Profile, StoreSchema>;

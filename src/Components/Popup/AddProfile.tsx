@@ -16,11 +16,14 @@ import { useClosableSnackbar, useSearchParams } from "../../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
-import { ProfileType } from "../../Store";
 
 // Firebase Imports
-import { useFirebase } from "react-redux-firebase";
-import { getProfile, getProfileTypesArr } from "../../Redux/firebase";
+import {
+  ExtendedFirestoreInstance,
+  FirebaseReducer,
+  useFirestore,
+} from "react-redux-firebase";
+import { getProfileTypesArr, getUser } from "../../Redux/firebase";
 
 // Material UI Imports
 import {
@@ -38,6 +41,7 @@ import {
   IconButton,
 } from "@material-ui/core";
 import { ArrowBack } from "@material-ui/icons";
+import { ProviderContext } from "notistack";
 
 const useStyles = makeStyles(() => ({
   content: {
@@ -59,7 +63,10 @@ const PROFILE_TABS: ProfileTab[] = ["default", "custom"];
 
 const AddProfilePopup: FC<PopupProps> = () => {
   const classes = useStyles();
+  const firestore = useFirestore();
+  const user = useSelector(getUser);
   const params = useSearchParams();
+  const snackbar = useClosableSnackbar();
   const profileTypes = useSelector(getProfileTypesArr);
 
   const wrapper = (children: JSX.Element) => (
@@ -98,9 +105,21 @@ const AddProfilePopup: FC<PopupProps> = () => {
         ></Tab>
         <Tab label="Custom" value={"custom" as ProfileTab}></Tab>
       </Tabs>
-      {profileTab === "custom" && <CustomProfile icons={icons} />}
+      {profileTab === "custom" && (
+        <CustomProfile
+          user={user}
+          firestore={firestore}
+          snackbar={snackbar}
+          icons={icons}
+        />
+      )}
       {profileTab === "default" && (
-        <DefaultProfiles profileTypes={profileTypes} />
+        <DefaultProfiles
+          user={user}
+          firestore={firestore}
+          snackbar={snackbar}
+          profileTypes={profileTypes}
+        />
       )}
     </>
   );
@@ -112,7 +131,7 @@ const useDefaultProfilesStyles = makeStyles((theme) => ({
     margin: theme.spacing(2, 0, 0.5, 0),
     width: "85%",
     textAlign: "center",
-    wordBreak: "break-all",
+    wordBreak: "break-word",
   },
   backArrow: {
     position: "absolute",
@@ -136,22 +155,36 @@ const useDefaultProfilesStyles = makeStyles((theme) => ({
     justifyContent: "center",
     alignItems: "center",
   },
+  addButton: {
+    margin: theme.spacing(1, 0),
+  },
 }));
 
 interface DefaultProfilesProps {
+  firestore: ExtendedFirestoreInstance;
+  user: FirebaseReducer.AuthState;
+  snackbar: ProviderContext;
   profileTypes: ReturnType<typeof getProfileTypesArr>;
 }
 
-const DefaultProfiles: FC<DefaultProfilesProps> = ({ profileTypes }) => {
+const DefaultProfiles: FC<DefaultProfilesProps> = ({
+  firestore,
+  user,
+  snackbar,
+  profileTypes,
+}) => {
   const params = useSearchParams();
   const classes = useDefaultProfilesStyles();
-  const { register, errors } = useForm();
+  const { register, errors, watch, reset, handleSubmit } = useForm<
+    Record<string, string>
+  >();
   const createProfile = params.get("createProfile");
 
   const found = profileTypes.find(({ name }) => name === createProfile);
 
   if (found) {
     const vars = found.baseURL.match(/__([^__]*)__/g);
+    const format = (str: string) => str.replace(new RegExp("_", "g"), "");
 
     if (vars === null) return null;
 
@@ -168,20 +201,72 @@ const DefaultProfiles: FC<DefaultProfilesProps> = ({ profileTypes }) => {
           </Tooltip>
           Add Your {createProfile} Profile
         </Typography>
-        <form className={classes.form}>
-          {vars.map((variable, i) => {
-            const formatted = variable.replace(new RegExp("_", "g"), "");
+        <form
+          className={classes.form}
+          onSubmit={handleSubmit((d) => {
+            const link = Object.entries(d).reduce(
+              (link, [key, value]) =>
+                link.replace(new RegExp(`__${key}__`, "g"), value),
+              found.baseURL
+            );
 
+            const newProfile: Partial<typeof found> & { link: string } = {
+              ...found,
+              link,
+            };
+
+            delete newProfile.baseURL;
+            delete newProfile.id;
+
+            firestore
+              .collection(`users/${user.uid}/defaultProfiles`)
+              .add(newProfile)
+              .then(() => {
+                reset();
+                snackbar.enqueueSnackbar(
+                  `Added '${newProfile.name}' Profile!`,
+                  { variant: "success" }
+                );
+                params.delete("popup");
+                params.delete("profileTab");
+                params.delete("createProfile");
+              })
+              .catch((e) => {
+                snackbar.enqueueSnackbar(`An error occurred: ${e}`);
+              });
+          })}
+        >
+          {vars.map((variable, i) => {
             return (
               <InputField
                 key={i}
-                name={formatted}
+                name={format(variable)}
                 errors={errors}
                 register={register}
                 minChars={2}
               />
             );
           })}
+          <Badge
+            {...found}
+            link={vars.reduce(
+              (link, variable) =>
+                link.replace(
+                  new RegExp(variable, "g"),
+                  watch(format(variable), "")
+                ),
+              found.baseURL
+            )}
+          />
+          <Button
+            size="small"
+            variant="contained"
+            color="primary"
+            type="submit"
+            className={classes.addButton}
+          >
+            Add
+          </Button>
         </form>
       </>
     );
@@ -255,9 +340,15 @@ const useCustomProfileStyles = makeStyles((theme) => ({
   badge: {
     margin: theme.spacing(1, 0),
   },
+  createButton: {
+    margin: theme.spacing(1, 0),
+  },
 }));
 
 interface CustomProfileProps {
+  firestore: ExtendedFirestoreInstance;
+  user: FirebaseReducer.AuthState;
+  snackbar: ProviderContext;
   icons: SimpleIcon[];
 }
 
@@ -265,11 +356,13 @@ type FormData = Omit<BadgeData, "icon"> & {
   icon: { label: string; value: string; svg: string } | null;
 };
 
-const CustomProfile: FC<CustomProfileProps> = ({ icons }) => {
-  const firebase = useFirebase();
+const CustomProfile: FC<CustomProfileProps> = ({
+  firestore,
+  user,
+  snackbar,
+  icons,
+}) => {
   const params = useSearchParams();
-  const profile = useSelector(getProfile);
-  const snackbar = useClosableSnackbar();
   const {
     register,
     handleSubmit,
@@ -302,23 +395,19 @@ const CustomProfile: FC<CustomProfileProps> = ({ icons }) => {
       </Typography>
       <form
         onSubmit={handleSubmit((d) => {
-          const existingProfiles = profile?.profiles?.custom ?? [];
+          const newProfile = {
+            ...d,
+            icon: d.icon === null ? null : d.icon.label,
+          };
 
-          firebase
-            .updateProfile({
-              profiles: {
-                custom: [
-                  ...existingProfiles,
-                  { ...d, icon: d.icon === null ? null : d.icon.label },
-                ] as ProfileType[],
-              },
-            })
+          firestore
+            .collection(`users/${user.uid}/customProfiles`)
+            .add(newProfile)
             .then(() => {
               reset();
-              snackbar.enqueueSnackbar(
-                `Successfully created new profile '${d.name}'!`,
-                { variant: "success" }
-              );
+              snackbar.enqueueSnackbar(`Created new profile '${d.name}'!`, {
+                variant: "success",
+              });
               params.delete("popup");
               params.delete("profileTab");
             })
@@ -373,8 +462,14 @@ const CustomProfile: FC<CustomProfileProps> = ({ icons }) => {
           icon={watch("icon")?.label ?? null}
           className={classes.badge}
         />
-        <Button variant="contained" color="primary" type="submit">
-          Create New Profile
+        <Button
+          size="small"
+          variant="contained"
+          color="primary"
+          type="submit"
+          className={classes.createButton}
+        >
+          Create
         </Button>
       </form>
     </>

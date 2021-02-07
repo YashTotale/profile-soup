@@ -1,5 +1,5 @@
 {
-  "name": "profile-soup",
+  "name": "profilesoup",
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.11.3",
