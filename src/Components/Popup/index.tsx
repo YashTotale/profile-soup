@@ -67,12 +67,14 @@ const createPopup = (
 ) => {
   switch (type) {
     case "login": {
-      if (user.isLoaded && !user.isEmpty) params.delete("popup");
+      if (!user.isLoaded) return null;
+      if (!user.isEmpty) params.delete("popup");
 
       return <LoginPopup {...props} />;
     }
     case "addProfile": {
-      if (user.isLoaded && user.isEmpty) params.delete("popup");
+      if (!user.isLoaded) return null;
+      if (user.isEmpty) params.delete("popup");
 
       return <AddProfilePopup {...props} />;
     }

@@ -61,6 +61,7 @@ export interface CreatedProfileType {
   color: string;
   link: string;
   icon: string;
+  from?: string;
 }
 
 export interface StoreSchema {

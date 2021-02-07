@@ -41,11 +41,20 @@ type ProfileTab = "custom" | "default";
 const PROFILE_TABS: ProfileTab[] = ["default", "custom"];
 
 const AddProfilePopup: FC<PopupProps> = () => {
-  useFirestoreConnect({ collection: "defaultProfiles" });
+  const user = useSelector(getUser);
+
+  useFirestoreConnect([
+    { collection: "defaultProfiles" },
+    {
+      collection: "users",
+      doc: user.uid,
+      subcollections: [{ collection: "defaultProfiles" }],
+      storeAs: "existingDefaultProfiles",
+    },
+  ]);
 
   const classes = useStyles();
   const firestore = useFirestore();
-  const user = useSelector(getUser);
   const params = useSearchParams();
   const snackbar = useClosableSnackbar();
   const defaultProfiles = useSelector(getDefaultProfilesArr);
