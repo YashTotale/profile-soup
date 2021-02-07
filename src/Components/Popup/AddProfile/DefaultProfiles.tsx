@@ -12,7 +12,7 @@ import {
   ExtendedFirestoreInstance,
   FirebaseReducer,
 } from "react-redux-firebase";
-import { getProfileTypesArr } from "../../../Redux/firebase";
+import { getDefaultProfilesArr } from "../../../Redux/firebase";
 
 // Material UI Imports
 import {
@@ -63,14 +63,14 @@ interface DefaultProfilesProps {
   firestore: ExtendedFirestoreInstance;
   user: FirebaseReducer.AuthState;
   snackbar: ProviderContext;
-  profileTypes: ReturnType<typeof getProfileTypesArr>;
+  defaultProfiles: ReturnType<typeof getDefaultProfilesArr>;
 }
 
 const DefaultProfiles: FC<DefaultProfilesProps> = ({
   firestore,
   user,
   snackbar,
-  profileTypes,
+  defaultProfiles,
 }) => {
   const params = useSearchParams();
   const classes = useDefaultProfilesStyles();
@@ -79,7 +79,7 @@ const DefaultProfiles: FC<DefaultProfilesProps> = ({
   >();
   const createProfile = params.get("createProfile");
 
-  const found = profileTypes.find(({ name }) => name === createProfile);
+  const found = defaultProfiles.find(({ name }) => name === createProfile);
 
   if (found) {
     const vars = found.baseURL.match(/__([^__]*)__/g);
@@ -181,7 +181,7 @@ const DefaultProfiles: FC<DefaultProfilesProps> = ({
         Add a Default Profile
       </Typography>
       <div className={classes.defaultProfiles}>
-        {profileTypes.map((profile) => (
+        {defaultProfiles.map((profile) => (
           <Link
             key={profile.id}
             to={() => {

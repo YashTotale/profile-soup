@@ -8,10 +8,10 @@ export const getProfile = (
   state: RootState
 ): FirebaseReducer.Profile<Profile> => state.firebase.profile;
 
-export const getProfileTypesArr = (
+export const getDefaultProfilesArr = (
   state: RootState
-): TypeWithId<DefaultProfileType>[] => state.firestore.ordered.profileTypes;
+): TypeWithId<DefaultProfileType>[] => state.firestore.ordered.defaultProfiles;
 
-export const getProfileTypesObj = (
+export const getDefaultProfilesObj = (
   state: RootState
-): Record<string, DefaultProfileType> => state.firestore.data.profileTypes;
+): Record<string, DefaultProfileType> => state.firestore.data.defaultProfiles;

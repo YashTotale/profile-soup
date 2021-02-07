@@ -9,8 +9,8 @@ import CustomProfile from "./CustomProfile";
 import { useSelector } from "react-redux";
 
 // Firebase Imports
-import { useFirestore } from "react-redux-firebase";
-import { getProfileTypesArr, getUser } from "../../../Redux/firebase";
+import { useFirestore, useFirestoreConnect } from "react-redux-firebase";
+import { getDefaultProfilesArr, getUser } from "../../../Redux/firebase";
 
 // Material UI Imports
 import {
@@ -41,12 +41,14 @@ type ProfileTab = "custom" | "default";
 const PROFILE_TABS: ProfileTab[] = ["default", "custom"];
 
 const AddProfilePopup: FC<PopupProps> = () => {
+  useFirestoreConnect({ collection: "defaultProfiles" });
+
   const classes = useStyles();
   const firestore = useFirestore();
   const user = useSelector(getUser);
   const params = useSearchParams();
   const snackbar = useClosableSnackbar();
-  const profileTypes = useSelector(getProfileTypesArr);
+  const defaultProfiles = useSelector(getDefaultProfilesArr);
 
   const wrapper = (children: JSX.Element) => (
     <>
@@ -55,17 +57,17 @@ const AddProfilePopup: FC<PopupProps> = () => {
     </>
   );
 
-  if (profileTypes === undefined) return wrapper(<CircularProgress />);
+  if (defaultProfiles === undefined) return wrapper(<CircularProgress />);
 
   const profileTab = params.get("profileTab") as ProfileTab;
 
   // Checking if profileTab is a valid ProfileTab and if not, replace with a valid one
   if (!PROFILE_TABS.includes(profileTab)) {
-    params.set("profileTab", profileTypes.length ? "default" : "custom");
+    params.set("profileTab", defaultProfiles.length ? "default" : "custom");
   }
 
   // Checking if the tab is set to 'default' but no default types are available
-  if (!profileTypes.length && profileTab === "default") {
+  if (!defaultProfiles.length && profileTab === "default") {
     params.set("profileTab", "custom");
   }
 
@@ -78,7 +80,7 @@ const AddProfilePopup: FC<PopupProps> = () => {
         <Tab
           label="Default"
           value={"default" as ProfileTab}
-          disabled={!profileTypes.length}
+          disabled={!defaultProfiles.length}
         ></Tab>
         <Tab label="Custom" value={"custom" as ProfileTab}></Tab>
       </Tabs>
@@ -90,7 +92,7 @@ const AddProfilePopup: FC<PopupProps> = () => {
           user={user}
           firestore={firestore}
           snackbar={snackbar}
-          profileTypes={profileTypes}
+          defaultProfiles={defaultProfiles}
         />
       )}
     </>

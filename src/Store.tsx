@@ -64,7 +64,7 @@ export interface CreatedProfileType {
 }
 
 export interface StoreSchema {
-  profileTypes: DefaultProfileType;
+  defaultProfiles: DefaultProfileType;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
