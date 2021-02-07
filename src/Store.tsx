@@ -54,6 +54,8 @@ export type AddId<T extends Record<string, any>> = T & { id: string };
 
 export interface ProfileType {
   name: string;
+  color: string;
+  link: string;
   icon: BadgeIcon;
 }
 
@@ -62,7 +64,11 @@ export interface StoreSchema {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface Profile {}
+export interface Profile {
+  profiles: {
+    custom: ProfileType[];
+  };
+}
 
 interface State {
   firebase: FirebaseReducer.Reducer<Profile, StoreSchema>;

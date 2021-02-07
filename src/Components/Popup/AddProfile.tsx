@@ -11,13 +11,14 @@ import SVG from "react-inlinesvg";
 import icons from "simple-icons";
 import { PopupProps } from "./index";
 import Badge, { BadgeData } from "../Badge";
+import { Params, useClosableSnackbar } from "../../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
 
 // Firebase Imports
-import { useFirestore } from "react-redux-firebase";
-import { getProfileTypesArr } from "../../Redux/firebase";
+import { useFirebase } from "react-redux-firebase";
+import { getProfile, getProfileTypesArr } from "../../Redux/firebase";
 
 // Material UI Imports
 import {
@@ -89,11 +90,11 @@ const AddProfilePopup: FC<PopupProps> = ({ params }) => {
         ></Tab>
         <Tab label="Custom" value={"custom" as ProfileTab}></Tab>
       </Tabs>
-      {profileTab === "custom" && <CustomProfile />}
+      {profileTab === "custom" && <CustomProfile params={params} />}
       {profileTab === "default" && (
         <div>
-          {profileTypes.map(({ name, id }) => (
-            <h3 key={id}>{name}</h3>
+          {profileTypes.map((profile) => (
+            <Badge {...profile} key={profile.id} />
           ))}
         </div>
       )}
@@ -143,15 +144,26 @@ const useCustomProfileStyles = makeStyles((theme) => ({
   },
 }));
 
-const CustomProfile: FC = () => {
-  const firestore = useFirestore();
-  const { register, handleSubmit, errors, control, watch } = useForm<BadgeData>(
-    {
-      defaultValues: {
-        icon: null,
-      },
-    }
-  );
+interface CustomProfileProps {
+  params: Params;
+}
+
+const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
+  const firebase = useFirebase();
+  const profile = useSelector(getProfile);
+  const snackbar = useClosableSnackbar();
+  const {
+    register,
+    handleSubmit,
+    errors,
+    control,
+    watch,
+    reset,
+  } = useForm<BadgeData>({
+    defaultValues: {
+      icon: null,
+    },
+  });
   const classes = useCustomProfileStyles();
   const options = useMemo(
     () =>
@@ -168,9 +180,26 @@ const CustomProfile: FC = () => {
 
   return (
     <form
-      onSubmit={handleSubmit((d) =>
-        firestore.collection("profileTypes").add(d)
-      )}
+      onSubmit={handleSubmit((d) => {
+        if (!profile.isEmpty) {
+          firebase
+            .updateProfile({
+              profiles: { custom: [...profile.profiles.custom, d] },
+            })
+            .then(() => {
+              reset();
+              snackbar.enqueueSnackbar(
+                `Successfully created new profile '${d.name}'!`,
+                { variant: "success" }
+              );
+              params.delete("popup");
+              params.delete("profileTab");
+            })
+            .catch((e) => {
+              snackbar.enqueueSnackbar(`An error occurred: ${e}`);
+            });
+        }
+      })}
       className={classes.form}
     >
       <TextField
