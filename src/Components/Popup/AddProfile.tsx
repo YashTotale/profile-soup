@@ -15,6 +15,7 @@ import { Params, useClosableSnackbar } from "../../Hooks";
 
 // Redux Imports
 import { useSelector } from "react-redux";
+import { ProfileType } from "../../Store";
 
 // Firebase Imports
 import { useFirebase } from "react-redux-firebase";
@@ -148,6 +149,10 @@ interface CustomProfileProps {
   params: Params;
 }
 
+type FormData = Omit<BadgeData, "icon"> & {
+  icon: { label: string; value: string; svg: string } | null;
+};
+
 const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
   const firebase = useFirebase();
   const profile = useSelector(getProfile);
@@ -159,7 +164,7 @@ const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
     control,
     watch,
     reset,
-  } = useForm<BadgeData>({
+  } = useForm<FormData>({
     defaultValues: {
       icon: null,
     },
@@ -181,24 +186,29 @@ const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
   return (
     <form
       onSubmit={handleSubmit((d) => {
-        if (!profile.isEmpty) {
-          firebase
-            .updateProfile({
-              profiles: { custom: [...profile.profiles.custom, d] },
-            })
-            .then(() => {
-              reset();
-              snackbar.enqueueSnackbar(
-                `Successfully created new profile '${d.name}'!`,
-                { variant: "success" }
-              );
-              params.delete("popup");
-              params.delete("profileTab");
-            })
-            .catch((e) => {
-              snackbar.enqueueSnackbar(`An error occurred: ${e}`);
-            });
-        }
+        const existingProfiles = profile?.profiles?.custom ?? [];
+
+        firebase
+          .updateProfile({
+            profiles: {
+              custom: [
+                ...existingProfiles,
+                { ...d, icon: d.icon === null ? null : d.icon.label },
+              ] as ProfileType[],
+            },
+          })
+          .then(() => {
+            reset();
+            snackbar.enqueueSnackbar(
+              `Successfully created new profile '${d.name}'!`,
+              { variant: "success" }
+            );
+            params.delete("popup");
+            params.delete("profileTab");
+          })
+          .catch((e) => {
+            snackbar.enqueueSnackbar(`An error occurred: ${e}`);
+          });
       })}
       className={classes.form}
     >
@@ -266,7 +276,7 @@ const CustomProfile: FC<CustomProfileProps> = ({ params }) => {
         name={watch("name")}
         color={watch("color")}
         link={watch("link")}
-        icon={watch("icon")}
+        icon={watch("icon")?.label ?? null}
         className={classes.badge}
       />
       <Button variant="contained" color="primary" type="submit">

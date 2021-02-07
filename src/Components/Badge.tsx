@@ -5,17 +5,11 @@ import React, { FC } from "react";
 import {} from "@material-ui/core";
 import {} from "@material-ui/icons";
 
-export type BadgeIcon = {
-  value: string;
-  label: string;
-  svg: string;
-} | null;
-
 export interface BadgeData {
   name: string;
   color: string;
   link: string;
-  icon: BadgeIcon;
+  icon: string | null;
 }
 
 interface BadgeProps extends BadgeData {
@@ -36,7 +30,9 @@ const Badge: FC<BadgeProps> = ({
   const image = (
     <img
       src={encodeURI(
-        `https://img.shields.io/static/v1?label=&message=${name}&color=${formattedColor}&style=for-the-badge&logo=${icon?.value}`
+        `https://img.shields.io/static/v1?label=&message=${name}&color=${formattedColor}&style=for-the-badge&logo=${icon
+          ?.toLowerCase()
+          ?.replace(" ", "-")}`
       )}
       alt={name}
       className={className}
